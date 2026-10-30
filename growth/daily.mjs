@@ -1,0 +1,39 @@
+// Daily run: two studio videos per channel language (growth/studio, formats by weekday, sky-news on big sky days), uploaded when
+// that channel is connected. LANGS env picks the channels (default "en,tr"). A language whose evening has started gets tomorrow's
+// videos, so a video is always about the day its viewers are waking up to. If a studio video fails, the old concept renderer fills in.
+import { execFileSync } from "child_process"; import fs from "fs"; import path from "path"; import { fileURLToPath } from "url";
+import { loadSky } from "./sky-loader.mjs"; import { WEEK } from "./studio/formats.mjs"; import { skyFacts } from "./studio/facts.mjs";
+const G = path.dirname(fileURLToPath(import.meta.url));
+const sky = await loadSky();
+const PLAN = JSON.parse(fs.readFileSync(path.join(G, "plan.json"), "utf8"));   // old concepts, used as the fallback
+const langs = (process.env.LANGS || "en,tr").split(",").map((s) => s.trim()).filter(Boolean);
+const connected = (l) => !!process.env[`YT_REFRESH_${l.toUpperCase()}`] || fs.existsSync(path.join(process.env.YT_SECRETS_DIR || "D:/SussaApp/Signing", `youtube_${l}.json`));
+const run = (args) => execFileSync(process.execPath, args, { stdio: "inherit" });
+// uploads already made (committed by the workflow), so a second run on the same day never posts a new set
+const DONE = path.join(G, "studio/done.json"), done = fs.existsSync(DONE) ? JSON.parse(fs.readFileSync(DONE, "utf8")) : [];
+let failed = 0;
+for (const lang of langs) {
+  const tz = sky.HORO_UI[lang].tz;
+  const hour = +new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hourCycle: "h23" }).format(new Date());
+  const d = hour >= 18 ? sky.addDays(sky.ymdIn(tz), 1) : sky.ymdIn(tz);
+  const iso = `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
+  const formats = [...WEEK[new Date(Date.UTC(d.y, d.m - 1, d.d)).getUTCDay()]];
+  if (skyFacts(sky, d).bigDay && !formats.includes("sky")) formats[1] = "sky";
+  const out = path.join(G, "out", iso);
+  formats.forEach((fmt, slot) => {
+    let mp4 = path.join(out, `${lang}_s${fmt}.mp4`); const key = `${iso}/${lang}/${slot}`;
+    if (done.includes(key)) { console.log("already posted", key); return; }
+    try {
+      if (!fs.existsSync(mp4)) run([path.join(G, "studio/build.mjs"), lang, fmt, iso, out]);
+    } catch (e) {
+      console.error(`studio ${lang} ${fmt} failed (${e.message}), using the old renderer`);
+      const kind = PLAN.after[slot % PLAN.after.length]; mp4 = path.join(out, `${lang}_${kind}.mp4`);
+      try { if (!fs.existsSync(mp4)) run([path.join(G, "render.mjs"), lang, kind, iso]); } catch (e2) { failed++; console.error(`FAILED ${lang} ${kind}: ${e2.message}`); return; }
+    }
+    try {
+      if (connected(lang)) { run([path.join(G, "youtube.mjs"), "upload", mp4]); done.push(key); fs.writeFileSync(DONE, JSON.stringify(done.slice(-400))); }
+      else console.log(`no YouTube channel connected for ${lang}, video kept at ${mp4}`);
+    } catch (e) { failed++; console.error(`UPLOAD FAILED ${lang} ${fmt}: ${e.message}`); }
+  });
+}
+process.exit(failed ? 1 : 0);

@@ -1,0 +1,26 @@
+{
+  "note": "Veo clips (8 s, 1080x1920, 24 fps, no audio) live in the GitHub release 'studio-lib' and are downloaded to growth/studio/lib. moods: ritual calm love power fun sad self hope sky cta",
+  "clips": {
+    "r_lay":      { "moods": ["ritual"], "special": "pick-hook: three face-down cards land at about 4.6 s; card centres x 264/572/888, top 900" },
+    "r_shuffle":  { "moods": ["ritual"] },
+    "r_candle":   { "moods": ["ritual", "calm"] },
+    "r_pull":     { "moods": ["ritual"] },
+    "r_incense":  { "moods": ["ritual", "calm", "sky"] },
+    "r_fan":      { "moods": ["ritual"] },
+    "p_window":   { "moods": ["calm", "hope", "sad"] },
+    "p_phone":    { "moods": ["love"], "range": [1.5, 6.5] },
+    "p_walk":     { "moods": ["power", "self"] },
+    "p_friends":  { "moods": ["fun", "love"] },
+    "p_thinking": { "moods": ["sad", "calm"] },
+    "p_mirror":   { "moods": ["self", "power"] },
+    "p_dance":    { "moods": ["fun", "hope", "self"] },
+    "p_coffee":   { "moods": ["calm", "hope"] },
+    "s_fullmoon": { "moods": ["sky"] },
+    "s_stars":    { "moods": ["sky", "hope"] },
+    "s_sunset":   { "moods": ["sky", "calm", "hope"] },
+    "cta_bed":    { "moods": ["cta"] },
+    "cta_bus":    { "moods": ["cta"] },
+    "cta_cafe":   { "moods": ["cta"] }
+  },
+  "music": ["music_1", "music_2", "music_3", "music_4", "music_5", "music_6"]
+}

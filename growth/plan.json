@@ -1,0 +1,21 @@
+{
+  "_": "15-day format test (2026-10-29 .. 11-12): 15 concepts x 2 episodes = 30 videos per channel. Day 16: compare in growth/stats, keep the winners. Dates are the video's day.",
+  "days": {
+    "2026-10-29": ["pick", "signs"],
+    "2026-10-30": ["sky", "chat1"],
+    "2026-10-31": ["myth1", "rank1"],
+    "2026-11-01": ["notes1", "yesno1"],
+    "2026-11-02": ["month", "foryou"],
+    "2026-11-03": ["compat1", "element"],
+    "2026-11-04": ["lucky", "pov1"],
+    "2026-11-05": ["retro1", "pick"],
+    "2026-11-06": ["signs", "chat2"],
+    "2026-11-07": ["rank2", "yesno2"],
+    "2026-11-08": ["notes2", "month"],
+    "2026-11-09": ["sky", "element"],
+    "2026-11-10": ["myth2", "compat2"],
+    "2026-11-11": ["foryou", "lucky"],
+    "2026-11-12": ["pov2", "retro2"]
+  },
+  "after": ["pick", "signs"]
+}

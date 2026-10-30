@@ -1,0 +1,68 @@
+# Renders and uploads the daily Sussa Shorts (growth/daily.mjs -> growth/studio). Secrets: YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_<LANG>, VERTEX_SA_JSON.
+name: daily-shorts
+on:
+  schedule:
+    - cron: "15 3 * * *"   # 06:15 Istanbul, 23:15 New York (the US gets the next day's videos the evening before)
+  workflow_dispatch:
+concurrency: { group: daily-shorts, cancel-in-progress: false }   # a manual run and the cron never upload at the same time
+permissions: { contents: write }   # the stats snapshot is committed back
+jobs:
+  shorts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 170
+    env:
+      LANGS: ${{ vars.SHORTS_LANGS || 'en,tr' }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_REFRESH_EN: ${{ secrets.YT_REFRESH_EN }}
+      YT_REFRESH_TR: ${{ secrets.YT_REFRESH_TR }}
+      YT_REFRESH_PT: ${{ secrets.YT_REFRESH_PT }}
+      YT_REFRESH_ES: ${{ secrets.YT_REFRESH_ES }}
+      YT_REFRESH_ID: ${{ secrets.YT_REFRESH_ID }}
+      YT_REFRESH_VI: ${{ secrets.YT_REFRESH_VI }}
+      YT_SECRETS_DIR: /nonexistent
+      PW_REQUIRE: /tmp/pw/package.json
+      VERTEX_SA_JSON: ${{ secrets.VERTEX_SA_JSON }}
+      STUDIO_LIB: ${{ github.workspace }}/growth/studio/lib
+      WHISPER_DIR: /home/runner/whisper
+      PYTHON: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "24" }
+      - name: Tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-noto-color-emoji > /dev/null
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y > /dev/null && npm i -s playwright-core@1.49.1 playwright@1.49.1 && npx playwright install --with-deps chromium
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/cache@v4
+        with: { path: /home/runner/whisper, key: whisper-small-v1 }
+      - name: Studio library
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          pip install -q faster-whisper numpy
+          gh release download studio-lib -D growth/studio/lib
+      - name: Render and upload
+        run: node growth/daily.mjs
+      - name: Send to Telegram (TikTok, posted by hand)
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TIKTOK_LANGS: ${{ vars.TIKTOK_LANGS || 'en' }}
+        run: for d in growth/out/*/; do node growth/telegram.mjs "$d"; done
+      - name: Stats snapshot
+        if: always()
+        run: |
+          node growth/stats.mjs
+          git config user.name "sussa-bot" && git config user.email "actions@users.noreply.github.com"
+          git add growth/stats growth/studio/*.json && git commit -q -m "stats + studio history $(date -u +%F)" && (git pull -q --rebase && git push -q) || echo "no stats change"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shorts
+          retention-days: 7
+          path: |
+            growth/out/**/*.mp4
+            growth/out/**/*.json
