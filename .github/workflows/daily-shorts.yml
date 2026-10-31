@@ -28,6 +28,7 @@ jobs:
       PYTHON: python
     steps:
       - uses: actions/checkout@v4
+        with: { ref: main }   # latest done.json even when the run was queued behind another (a dispatch pins the commit of its trigger time)
       - uses: actions/setup-node@v4
         with: { node-version: "24" }
       - name: Tools
