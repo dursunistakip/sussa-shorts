@@ -12,6 +12,7 @@ jobs:
     timeout-minutes: 170
     env:
       LANGS: ${{ vars.SHORTS_LANGS || 'en,tr' }}
+      SHORTS_EXTRA: ${{ vars.SHORTS_EXTRA }}   # channels that get a third daily video
       YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
       YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
       YT_REFRESH_EN: ${{ secrets.YT_REFRESH_EN }}
