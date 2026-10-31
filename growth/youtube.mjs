@@ -47,7 +47,9 @@ if (cmd === "auth") {
   if (dup) { console.log(`already on the channel: ${meta.title} -> https://youtube.com/shorts/${dup.snippet.resourceId.videoId}`); process.exit(0); }
   const body = {
     snippet: { title: meta.title, description: meta.description, tags: meta.tags, categoryId: "24", defaultLanguage: YT_LANG[meta.lang] || meta.lang, defaultAudioLanguage: YT_LANG[meta.lang] || meta.lang },
-    status: { privacyStatus: process.env.YT_PRIVACY || "public", selfDeclaredMadeForKids: false, containsSyntheticMedia: !!meta.synthetic },   // Veo footage is disclosed as altered/synthetic
+    // a future publishAt (set by daily.mjs) uploads it private and YouTube makes it public then, so a channel's videos come out hours apart
+    status: { ...(Date.parse(meta.publishAt) > Date.now() + 60e3 ? { privacyStatus: "private", publishAt: meta.publishAt } : { privacyStatus: process.env.YT_PRIVACY || "public" }),
+      selfDeclaredMadeForKids: false, containsSyntheticMedia: !!meta.synthetic },   // Veo footage is disclosed as altered/synthetic
   };
   const size = fs.statSync(file).size;
   const init = await fetch("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status", {
@@ -56,7 +58,7 @@ if (cmd === "auth") {
   if (!init.ok) throw new Error(`upload init ${init.status}: ${await init.text()}`);
   const put = await fetch(init.headers.get("location"), { method: "PUT", headers: { "Content-Type": "video/mp4", "Content-Length": String(size) }, body: fs.readFileSync(file) });
   const j = await put.json(); if (!j.id) throw new Error(`upload ${put.status}: ${JSON.stringify(j).slice(0, 300)}`);
-  console.log(`uploaded ${path.basename(file)} -> https://youtube.com/shorts/${j.id}`);
+  console.log(`uploaded ${path.basename(file)} -> https://youtube.com/shorts/${j.id}${meta.publishAt ? ` (public at ${meta.publishAt})` : ""}`);
   fs.appendFileSync(path.join(path.dirname(file), "uploaded.txt"), `${path.basename(file)}\t${j.id}\n`);
 } else {
   console.log("usage: node growth/youtube.mjs auth <lang> | upload <file.mp4>");

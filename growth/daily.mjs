@@ -8,6 +8,15 @@ const sky = await loadSky();
 const PLAN = JSON.parse(fs.readFileSync(path.join(G, "plan.json"), "utf8"));   // old concepts, used as the fallback
 const langs = (process.env.LANGS || "en,tr").split(",").map((s) => s.trim()).filter(Boolean);
 const connected = (l) => !!process.env[`YT_REFRESH_${l.toUpperCase()}`] || fs.existsSync(path.join(process.env.YT_SECRETS_DIR || "D:/SussaApp/Signing", `youtube_${l}.json`));
+// extra daily video for strong channels (SHORTS_EXTRA, e.g. "es"): the other of the two best formats, yes/no and rank
+const extra = (process.env.SHORTS_EXTRA || "").split(",").map((s) => s.trim()).filter(Boolean);
+// local publish hours per slot: a channel's videos come out hours apart instead of minutes, each with its own test window
+const HOURS = [[12], [12, 19], [12, 17, 21]];
+const utcAt = (d, hour, tz) => {   // that local wall-clock time in tz, as an ISO instant
+  const guess = Date.UTC(d.y, d.m - 1, d.d, hour), p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23",
+    year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" }).formatToParts(new Date(guess)).map((x) => [x.type, +x.value]));
+  return new Date(2 * guess - Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute)).toISOString();
+};
 const run = (args) => execFileSync(process.execPath, args, { stdio: "inherit" });
 // uploads already made (committed by the workflow), so a second run on the same day never posts a new set
 const DONE = path.join(G, "studio/done.json"), done = fs.existsSync(DONE) ? JSON.parse(fs.readFileSync(DONE, "utf8")) : [];
@@ -19,6 +28,7 @@ for (const lang of langs) {
   const iso = `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
   const formats = [...WEEK[new Date(Date.UTC(d.y, d.m - 1, d.d)).getUTCDay()]];
   if (skyFacts(sky, d).bigDay && !formats.includes("sky")) formats[1] = "sky";
+  if (extra.includes(lang)) formats.push(!formats.includes("yesno") ? "yesno" : !formats.includes("rank") ? "rank" : "pick");
   const out = path.join(G, "out", iso);
   formats.forEach((fmt, slot) => {
     let mp4 = path.join(out, `${lang}_s${fmt}.mp4`); const key = `${iso}/${lang}/${slot}`;
@@ -31,6 +41,8 @@ for (const lang of langs) {
       try { if (!fs.existsSync(mp4)) run([path.join(G, "render.mjs"), lang, kind, iso]); } catch (e2) { failed++; console.error(`FAILED ${lang} ${kind}: ${e2.message}`); return; }
     }
     try {
+      const mf = mp4.replace(/\.mp4$/, ".json"), meta = JSON.parse(fs.readFileSync(mf, "utf8"));
+      meta.publishAt = utcAt(d, HOURS[formats.length - 1][slot], tz); fs.writeFileSync(mf, JSON.stringify(meta, null, 1));
       if (connected(lang)) { run([path.join(G, "youtube.mjs"), "upload", mp4]); done.push(key); fs.writeFileSync(DONE, JSON.stringify(done.slice(-400))); }
       else console.log(`no YouTube channel connected for ${lang}, video kept at ${mp4}`);
     } catch (e) { failed++; console.error(`UPLOAD FAILED ${lang} ${fmt}: ${e.message}`); }
