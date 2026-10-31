@@ -15,7 +15,8 @@ const OUT = outArg || path.join(HERE, "../out", iso); fs.mkdirSync(OUT, { recurs
 const name = `${lang}_s${fmt}`, WORK = path.join(OUT, `.${name}`); fs.mkdirSync(WORK, { recursive: true });
 const url = (p) => "file:///" + path.resolve(p).replace(/\\/g, "/");
 const ff = (args) => execFileSync(FFMPEG, ["-y", "-loglevel", "error", ...args], { stdio: "inherit" });
-const LIBJ = JSON.parse(fs.readFileSync(path.join(HERE, "library.json"), "utf8"));
+// STUDIO_LIBRARY: another clip list (e.g. only filmed stock footage); a clip without "src" is Veo-generated
+const LIBJ = JSON.parse(fs.readFileSync(process.env.STUDIO_LIBRARY || path.join(HERE, "library.json"), "utf8"));
 const END_TXT = { en: ["your daily tarot & real-sky horoscope", "Free on Google Play", "Your own reading every morning:"],
   tr: ["günlük tarot ve gerçek gökyüzü burç yorumu", "Google Play'de ücretsiz", "Her sabah sana özel yorum:"],
   pt: ["seu tarot diário e horóscopo pelo céu real", "Grátis no Google Play", "Sua leitura pessoal toda manhã:"],
@@ -281,7 +282,8 @@ const play = `https://play.google.com/store/apps/details?id=app.sussa.bestie&ref
 const [body, tagsLine = ""] = S.description.split(/\n\s*\n(?=#)/);
 const description = `${body.trim()}\n\n${END_TXT[2]} ${play}\nhttps://asksussa.com/${lang}/${web}\n\n${tagsLine.trim()}`.trim();
 const title = S.title.length > 100 ? S.title.slice(0, 97) + "…" : S.title;
-fs.writeFileSync(path.join(OUT, `${name}.json`), JSON.stringify({ title, description, tags: S.tags, lang, kind: `s${fmt}`, date: iso, tiktok: S.tiktok, synthetic: true }, null, 1));
+fs.writeFileSync(path.join(OUT, `${name}.json`), JSON.stringify({ title, description, tags: S.tags, lang, kind: `s${fmt}`, date: iso, tiktok: S.tiktok,
+  synthetic: pieces.some((p) => !LIBJ.clips[p.clip].src) }, null, 1));   // YouTube's altered-or-synthetic label only when Veo footage is in it
 mine.clips.push(...inVideo.map((c) => [iso, c])); (P.cards || []).forEach((c) => mine.cards.push([iso, c])); if (P.topic) mine.topics.push([iso, P.topic]);
 for (const k of ["clips", "cards", "topics"]) mine[k] = mine[k].filter(([dd]) => daysAgo(dd) < 60);
 fs.writeFileSync(HIST, JSON.stringify(hist));
