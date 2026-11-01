@@ -38,7 +38,7 @@ export function plan(fmt, rnd, used) {
   if (fmt === "pick") {
     const cards = []; for (let i = 0; i < 3; i++) cards.push(pickCard(cards));
     return { mood: ["ritual"], segs: [{ ...hook, clip: "r_lay", numbers: true }, ...cards.map((c, i) => ({ id: `c${i + 1}`, type: "card", card: c, label: i + 1,
-      fields: `vo (starts with 'Card ${i + 1}.' then the card name, then a 2-sentence message for this week built on the real meaning of ${CARD_NAMES[c]}; specific, emotional, second person), name (card name in the video language)` })), cta],
+      fields: `vo (starts with the natural spoken way to say 'card number ${i + 1}' in the video language, number as a word, then the card name, then a 2-sentence message for this week built on the real meaning of ${CARD_NAMES[c]}; specific, emotional, second person), name (card name in the video language)` })), cta],
       brief: `Pick-a-card reading. Cards: 1 = ${CARD_NAMES[cards[0]]}, 2 = ${CARD_NAMES[cards[1]]}, 3 = ${CARD_NAMES[cards[2]]}. Ask viewers to comment their number.`, cards };
   }
   if (fmt === "found") {
@@ -55,7 +55,7 @@ export function plan(fmt, rnd, used) {
   }
   if (fmt === "rank" || fmt === "signsas") {
     const topic = pickTopic(fmt), n = fmt === "rank" ? 5 : 6, ss = signs(n);
-    return { segs: [hook, ...ss.map((s, i) => ({ id: `s${i + 1}`, type: "item", sign: s, badge: fmt === "rank" ? `#${n - i}` : "", fields: `vo (${fmt === "rank" ? `'Number ${n - i}, ' + ` : ""}the sign name + one funny, painfully relatable line, max 14 words), line (on-screen version, max 7 words)` })), cta],
+    return { segs: [hook, ...ss.map((s, i) => ({ id: `s${i + 1}`, type: "item", sign: s, badge: fmt === "rank" ? `#${n - i}` : "", fields: `vo (${fmt === "rank" ? `the spoken words for 'number ${n - i}' (number as a word) + ` : ""}the sign name + one funny, painfully relatable line, max 14 words), line (on-screen version, max 7 words)` })), cta],
       brief: fmt === "rank" ? `Ranking: "${topic}". Countdown from #${n} to #1 using these signs in this order: ${ss.map((s) => sky_sign(s)).join(", ")}. Funny and accurate to each sign's personality. Ask viewers to comment if their sign is right.` :
         `"${topic}" — one relatable line per sign for: ${ss.map((s) => sky_sign(s)).join(", ")}. Funny, specific, screenshot-worthy. Tell viewers to tag a friend.`, topic };
   }

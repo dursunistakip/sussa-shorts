@@ -30,9 +30,9 @@ export async function gemini(prompt, { model = "gemini-3.1-pro-preview", tempera
   return JSON.parse(text.replace(/^```json\s*|```\s*$/g, ""));
 }
 // 24 kHz mono 16-bit PCM wrapped as WAV
-export async function tts(text, file, { voice = "Leda", style } = {}) {
-  const d = await generate("gemini-2.5-flash-tts", { contents: [{ role: "user", parts: [{ text: `${style}\n\n${text}` }] }],
-    generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } } });
+export async function tts(text, file, { voice = "Aoede", style, lang, model = "gemini-2.5-pro-tts" } = {}) {
+  const d = await generate(model, { contents: [{ role: "user", parts: [{ text: `${style}\n\n${text}` }] }],
+    generationConfig: { responseModalities: ["AUDIO"], speechConfig: { ...(lang ? { languageCode: lang } : {}), voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } } });
   const pcm = Buffer.from(d.candidates[0].content.parts[0].inlineData.data, "base64");
   const h = Buffer.alloc(44); h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVEfmt ", 8); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
   h.writeUInt32LE(24000, 24); h.writeUInt32LE(48000, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34); h.write("data", 36); h.writeUInt32LE(pcm.length, 40);

@@ -22,6 +22,8 @@ REAL SKY FACTS (only use these for any astrology claim, dates included): ${JSON.
 
 Voice-over rules:
 - It is read by one warm young woman talking to a friend. Short sentences, spoken rhythm, contractions, no stage directions, no emoji in "vo".
+- Write the way people of that country actually TALK, not how they write: everyday spoken words and word order, no written-language or translated phrasing, no ad-speak (also in the cta). If a native friend would never say a line in a voice note, rewrite it.
+- Numbers in "vo" are always spelled out as spoken words (never digits like "1." or "#3"), so the voice reads them naturally.
 - The first 3 words of the hook must stop the scroll (curiosity, direct address, or a bold claim). No greetings, no "hey guys", no "welcome".
 - Be specific and emotionally true; the viewer must recognize herself. Gentle wording: "the energy says", "this week asks you to" — never promise outcomes, never health/money guarantees.
 - Banned: delve, tapestry, journey, embrace, unlock, realm, "the universe has a plan", "buckle up", "in today's video", hashtags inside vo.

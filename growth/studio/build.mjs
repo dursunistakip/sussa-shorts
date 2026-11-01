@@ -9,7 +9,7 @@ import { writeScript } from "./script.mjs"; import { tts } from "./vertex.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.join(HERE, "../.."), A = path.join(HERE, "../assets");
 const LIB = process.env.STUDIO_LIB || path.join(HERE, "lib"), FFMPEG = process.env.FFMPEG || "ffmpeg", PY = process.env.PYTHON || "python";
-const FPS = 30, W = 1080, H = 1920, TEMPO = 1.07, LEAD = 0.35, END = 2.9;
+const FPS = 30, W = 1080, H = 1920, TEMPO = 1, LEAD = 0.35, END = 2.9;
 const [lang, fmt, iso, outArg] = process.argv.slice(2);
 const OUT = outArg || path.join(HERE, "../out", iso); fs.mkdirSync(OUT, { recursive: true });
 const name = `${lang}_s${fmt}`, WORK = path.join(OUT, `.${name}`); fs.mkdirSync(WORK, { recursive: true });
@@ -41,14 +41,34 @@ const S = fs.existsSync(scriptFile) ? JSON.parse(fs.readFileSync(scriptFile, "ut
 fs.writeFileSync(scriptFile, JSON.stringify(S, null, 1));
 const signName = (s) => sky.t(lang, `sign.${sky.SIGNS[s]}.name`);
 
-// ---------------------------------------------------------------- voice (one take per segment) + word timings
-const STYLE = "Read this like a warm, slightly playful young woman talking to a close friend on TikTok. Natural, intimate, a little mysterious, lively pace, never like an announcer:";
+// ---------------------------------------------------------------- voice (the whole script in one take, so the intonation flows) + word timings
+// the direction is in the video's own language: an English direction makes the model read other languages with English prosody
+const VOICE = {
+  en: ["en-US", "Read this like a warm, slightly playful young woman sending a voice note to her best friend. Natural, intimate, a little mysterious, relaxed pace, never like an announcer:"],
+  tr: ["tr-TR", "Bunu İstanbullu, yirmili yaşlarında, sıcak ve samimi bir kadın gibi oku; yakın bir arkadaşına sesli mesaj atıyormuş gibi. Doğal Türkçe vurgu ve tonlama, cümle sonlarında spiker gibi düşme yok, acele yok, hafif gizemli ve gülümseyerek:"],
+  pt: ["pt-BR", "Leia como uma jovem brasileira, calorosa e um pouco brincalhona, mandando um áudio para a melhor amiga. Entonação natural do português do Brasil, íntima, um pouco misteriosa, sem pressa, nunca como locutora:"],
+  es: ["es-US", "Léelo como una chica mexicana de veintitantos, cálida y un poco juguetona, mandándole un audio a su mejor amiga. Entonación natural latinoamericana, íntima, un poco misteriosa, sin prisa, nunca como locutora:"],
+  id: ["id-ID", "Bacakan seperti perempuan muda Jakarta yang hangat dan sedikit jahil, lagi kirim voice note ke sahabatnya. Intonasi bahasa Indonesia yang natural dan santai, akrab, sedikit misterius, tidak terburu-buru, jangan seperti penyiar:"],
+  vi: ["vi-VN", "Hãy đọc như một cô gái trẻ người Việt, ấm áp và hơi tinh nghịch, đang gửi tin nhắn thoại cho bạn thân. Ngữ điệu tiếng Việt tự nhiên, thân mật, hơi bí ẩn, không vội, đừng đọc như phát thanh viên:"] }[lang];
 const segs = P.segs.map((s, k) => ({ ...s, ...S.segments[s.id], k, words: S.segments[s.id].vo.trim().split(/\s+/), wav: path.join(WORK, `vo_${k}.wav`), al: path.join(WORK, `al_${k}.json`) }));
-await Promise.all(segs.map((s) => (fs.existsSync(s.wav) ? null : tts(s.vo.trim(), s.wav, { style: STYLE }))));
-const jobs = segs.filter((s) => !fs.existsSync(s.al)).map((s) => ({ wav: s.wav, words: s.words, out: s.al }));
-if (jobs.length) {
-  fs.writeFileSync(path.join(WORK, "jobs.json"), JSON.stringify(jobs));
-  execFileSync(PY, [path.join(HERE, "align.py"), path.join(WORK, "jobs.json"), ...(process.env.WHISPER_DIR ? [process.env.WHISPER_DIR] : [])], { stdio: "inherit" });
+if (segs.some((s) => !fs.existsSync(s.wav) || !fs.existsSync(s.al))) {
+  const full = path.join(WORK, "vo_full.wav"), fullAl = path.join(WORK, "al_full.json"), all = segs.flatMap((s) => s.words);
+  if (!fs.existsSync(full)) await tts(segs.map((s) => s.vo.trim()).join("\n\n"), full, { style: VOICE[1], lang: VOICE[0] });
+  if (!fs.existsSync(fullAl)) {
+    fs.writeFileSync(path.join(WORK, "jobs.json"), JSON.stringify([{ wav: full, words: all, out: fullAl }]));
+    execFileSync(PY, [path.join(HERE, "align.py"), path.join(WORK, "jobs.json"), ...(process.env.WHISPER_DIR ? [process.env.WHISPER_DIR] : [])], { stdio: "inherit" });
+  }
+  // cut the take back into per-segment clips in the middle of the pause between segments
+  const al = JSON.parse(fs.readFileSync(fullAl, "utf8")), wavBuf = fs.readFileSync(full), pcm = wavBuf.subarray(44), rate = wavBuf.readUInt32LE(24);
+  const first = []; let n = 0; for (const s of segs) { first.push(n); n += s.words.length; }
+  const cuts = segs.map((s, k) => (k === 0 ? 0 : (al.times[first[k] - 1][1] + al.times[first[k]][0]) / 2)).concat(al.total);
+  segs.forEach((s, k) => {
+    const lead = k === 0 ? 0 : Math.max(0, al.times[first[k]][0] - cuts[k] - 0.08), off = cuts[k] + lead;   // drop the pause before the first word
+    const body = pcm.subarray(Math.round(off * rate) * 2, Math.round(cuts[k + 1] * rate) * 2), h = Buffer.from(wavBuf.subarray(0, 44));
+    h.writeUInt32LE(36 + body.length, 4); h.writeUInt32LE(body.length, 40); fs.writeFileSync(s.wav, Buffer.concat([h, body]));
+    const times = al.times.slice(first[k], first[k] + s.words.length).map(([x, y]) => [Math.max(0, x - off), Math.max(0, y - off)]);
+    fs.writeFileSync(s.al, JSON.stringify({ total: body.length / 2 / rate, times }));
+  });
 }
 // timeline: each segment = lead-in + its voice (sped up by TEMPO) + a breath; the pick hook waits until the cards are down
 const LEADIN = { hook: .3, card: .55, item: .25, pair: .3, text: .3, cta: .35 }, BREATH = .25;
