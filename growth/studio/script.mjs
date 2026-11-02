@@ -34,7 +34,7 @@ Fill these segments (keep the ids, keep this order). Every segment except "hook"
 ${fields}
 
 Also write:
-- "title": YouTube Shorts title, max 70 characters, starts with the strongest search phrase for this video (see search terms), curiosity-driven, 1 emoji max, end with " #shorts".
+- "title": YouTube Shorts title, max 70 characters, starts with the strongest search phrase for this video (see search terms), curiosity-driven, 1 emoji max, end with " #shorts". It must also name one concrete detail of THIS video (a card name, a sign, or the sky event of the date) so titles never repeat from day to day.
 - "description": 2-3 natural lines for YouTube that repeat the main search phrases (no links, the app link is added after), then a blank line, then 6-8 hashtags mixing broad and specific (include sign/card names that appear).
 - "tags": 12-15 YouTube tags (search phrases, lowercase).
 - "tiktok": TikTok caption: one hook line (max 90 chars) + a line break + 4-5 hashtags (2 broad like #tarot #fyp-equivalent for the language, 2-3 specific). No links.

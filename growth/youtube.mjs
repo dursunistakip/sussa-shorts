@@ -43,7 +43,8 @@ if (cmd === "auth") {
   const api = (u) => fetch(`https://www.googleapis.com/youtube/v3/${u}`, { headers: { Authorization: `Bearer ${access}` } }).then((r) => r.json());
   const uploads = (await api("channels?part=contentDetails&mine=true")).items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
   const recent = uploads ? (await api(`playlistItems?part=snippet&maxResults=20&playlistId=${uploads}`)).items || [] : [];
-  const dup = recent.find((v) => v.snippet?.title === meta.title);
+  // same title alone is not enough (generic titles repeat across days): the description must match too
+  const dup = recent.find((v) => v.snippet?.title === meta.title && v.snippet?.description?.slice(0, 120) === meta.description.slice(0, 120));
   if (dup) { console.log(`already on the channel: ${meta.title} -> https://youtube.com/shorts/${dup.snippet.resourceId.videoId}`); process.exit(0); }
   const body = {
     snippet: { title: meta.title, description: meta.description, tags: meta.tags, categoryId: "24", defaultLanguage: YT_LANG[meta.lang] || meta.lang, defaultAudioLanguage: YT_LANG[meta.lang] || meta.lang },
