@@ -16,10 +16,12 @@ async function token() {
 async function generate(model, body, tries = 3) {
   const url = `https://aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/global/publishers/google/models/${model}:generateContent`;
   for (let i = 1; ; i++) {
-    const r = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${await token()}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    // a hung request (no headers for minutes) counts as a retryable failure instead of killing the build
+    const r = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${await token()}`, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(150000) })
+      .catch((e) => ({ ok: false, status: 0, text: async () => String(e.cause || e) }));
     if (r.ok) return r.json();
     const msg = `${model} ${r.status}: ${(await r.text()).slice(0, 300)}`;
-    if (i >= tries || ![429, 500, 503].includes(r.status)) throw new Error(msg);
+    if (i >= tries || ![0, 429, 500, 503].includes(r.status)) throw new Error(msg);
     await new Promise((s) => setTimeout(s, 4000 * i));
   }
 }
@@ -31,8 +33,10 @@ export async function gemini(prompt, { model = "gemini-3.1-pro-preview", tempera
 }
 // 24 kHz mono 16-bit PCM wrapped as WAV
 export async function tts(text, file, { voice = "Aoede", style, lang, model = "gemini-2.5-pro-tts" } = {}) {
-  const d = await generate(model, { contents: [{ role: "user", parts: [{ text: `${style}\n\n${text}` }] }],
-    generationConfig: { responseModalities: ["AUDIO"], speechConfig: { ...(lang ? { languageCode: lang } : {}), voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } } });
+  // Pro voice first; if it keeps failing, the flash voice (same speaker) still beats the old renderer
+  const req = { contents: [{ role: "user", parts: [{ text: `${style}\n\n${text}` }] }],
+    generationConfig: { responseModalities: ["AUDIO"], speechConfig: { ...(lang ? { languageCode: lang } : {}), voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } } };
+  const d = await generate(model, req).catch((e) => { console.error(`tts ${model} failed, using flash: ${e.message.slice(0, 120)}`); return generate("gemini-2.5-flash-tts", req); });
   const pcm = Buffer.from(d.candidates[0].content.parts[0].inlineData.data, "base64");
   const h = Buffer.alloc(44); h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVEfmt ", 8); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
   h.writeUInt32LE(24000, 24); h.writeUInt32LE(48000, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34); h.write("data", 36); h.writeUInt32LE(pcm.length, 40);
