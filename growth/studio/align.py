@@ -9,12 +9,12 @@ jobs = json.load(open(sys.argv[1], encoding="utf8"))
 m = WhisperModel("small", device="cpu", compute_type="int8", download_root=sys.argv[2] if len(sys.argv) > 2 else None)
 norm = lambda s: re.sub(r"[^\w]", "", s.lower())
 
-def align(wav, words, out):
+def align(wav, words, out, lang=None):
     w = wave.open(wav); rate = w.getframerate()
     a = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
     total = len(a) / rate
     a = np.interp(np.arange(0, len(a), rate / 16000), np.arange(len(a)), a).astype(np.float32)
-    segs, _ = m.transcribe(a, word_timestamps=True, vad_filter=False)
+    segs, _ = m.transcribe(a, word_timestamps=True, vad_filter=False, language=lang)
     heard = [(x.start, x.end, x.word) for s in segs for x in s.words]
     sm = difflib.SequenceMatcher(None, [norm(x[2]) for x in heard], [norm(x) for x in words], autojunk=False)
     t = [None] * len(words)
@@ -34,4 +34,4 @@ def align(wav, words, out):
         i = j
     json.dump({"total": total, "matched": sum(b.size for b in sm.get_matching_blocks()), "times": [[round(x, 3), round(y, 3)] for x, y in t]}, open(out, "w"))
 
-for j in jobs: align(j["wav"], j["words"], j["out"])
+for j in jobs: align(j["wav"], j["words"], j["out"], j.get("lang"))

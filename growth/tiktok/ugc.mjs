@@ -9,12 +9,14 @@ import { gemini, image, veo } from "../studio/vertex.mjs"; import { CARD_NAMES }
 const HERE = path.dirname(fileURLToPath(import.meta.url)), [lang, iso, outArg] = process.argv.slice(2), FF = process.env.FFMPEG || "ffmpeg", PY = process.env.PYTHON || "python";
 const OUT = path.join(outArg || path.join(HERE, "../out", iso), `${lang}_ugc`); fs.mkdirSync(OUT, { recursive: true });
 const url = (p) => "file:///" + path.resolve(p).replace(/\\/g, "/"), ff = (a) => execFileSync(FF, ["-y", "-loglevel", "error", ...a], { stdio: "inherit" });
-const LANG = { en: "American English" }[lang] || lang, W = 1080, H = 1920, END = 2.6;
+const LANG = { en: "American English", tr: "Turkish from Istanbul", pt: "Brazilian Portuguese", es: "Mexican Spanish", id: "casual Indonesian from Jakarta", vi: "Vietnamese from Saigon" }[lang], W = 1080, H = 1920, END = 2.6;
 
 // today's real content: a different sign every day
 const sky = await loadSky(), [y, m, d] = iso.split("-").map(Number), date = { y, m, d }, sign = Math.floor(Date.parse(iso) / 864e5) % 12;
 const signName = sky.t(lang, `sign.${sky.SIGNS[sign]}.name`), { card, reversed } = sky.dailyCard(sign, date), today = sky.daily(lang, sign, date);
 const cardName = `${CARD_NAMES[card]}${reversed ? " reversed" : ""}`;
+const TXT = { en: ["today", "your sign's card, every morning", "free on Google Play"], tr: ["bugün", "burcunun kartı, her sabah", "Google Play'de ücretsiz"], pt: ["hoje", "a carta do seu signo, toda manhã", "grátis no Google Play"],
+  es: ["hoy", "la carta de tu signo, cada mañana", "gratis en Google Play"], id: ["hari ini", "kartu zodiakmu, tiap pagi", "gratis di Google Play"], vi: ["hôm nay", "lá bài của cung bạn, mỗi sáng", "miễn phí trên Google Play"] }[lang];
 
 const ref = path.join(HERE, "chars", "mara.jpg");
 const scriptFile = path.join(OUT, "script.json");
@@ -22,17 +24,18 @@ const S = fs.existsSync(scriptFile) ? JSON.parse(fs.readFileSync(scriptFile, "ut
 True facts: everyone with the sign ${signName} sees the same daily card in Sussa today: ${cardName}. The app's message for them today: "${today.open}" Love: "${today.love}" Advice: "${today.flavor}"
 Part 1 (hook): says that every ${signName} on Sussa got the same card this morning, names the card, and teases it in a way that makes people of every sign stay. Part 2: what it means for them today, built on the card's real meaning and the app's message, one relatable and specific line about daily life. Part 3: a funny closing line, then tells people to check their own sign's card on Sussa, free on Google Play.
 Rules: each part is one spoken breath of 15-18 words, easy to say in 6.5 seconds, real speech ("okay so", "like"). She presents the app; she must not say she uses it, and must not claim results. No promises about health, money or what a real person will do. Spell the name "Sussa".
-Return JSON: {"lines":[{"say":"...","face":"her expression in English"}] (exactly 3), "caption":"short natural caption + 3 hashtags"}`);
+Return JSON: {"lines":[{"say":"...","face":"her expression in English"}] (exactly 3), "cardWord":"the exact word in part 1, as written there, that finishes the card's name", "caption":"short natural caption + 3 hashtags"}`);
 fs.writeFileSync(scriptFile, JSON.stringify(S, null, 1));
 
 // one take: the first clip, then each continuation carries the whole take so far
-const LOOK = "Handheld front-camera phone selfie video, slight natural shake, parked car at dusk, faint car interior ambience, flat real phone audio. She looks into the lens and speaks casually at an easy steady pace, in the same voice throughout. Her hands stay empty, no objects, no cards. No music, no subtitles, no captions, no on-screen text.";
+const LOOK = "Handheld front-camera phone selfie video, slight natural shake, parked car at dusk, faint car interior ambience, flat real phone audio. She looks into the lens and speaks casually at an easy steady pace, in the same voice throughout. She speaks ${LANG} as her mother tongue, with the everyday melody and rhythm of a voice note to a friend, never like an announcer. She talks without long pauses right up to the end of the clip. Her hands stay empty, no objects, no cards. No music, no subtitles, no captions, no on-screen text.";
+const NEG = "seatbelt, seat belt, strap, band across chest, subtitles, captions, on-screen text, letters, words";
 const take = S.lines.map((_, i) => path.join(OUT, `take_${i}.mp4`));
 for (let i = 0; i < S.lines.length; i++) {
   if (fs.existsSync(take[i])) continue;
   const l = S.lines[i], line = `${l.face}. She says: "${l.say}"`;
-  if (i === 0) await veo(`${LOOK} ${line}`, take[0], { image: ref, audio: true, resolution: "720p" });
-  else await veo(`${LOOK} She carries on without a pause in the same voice. ${line}`, take[i], { video: take[i - 1], audio: true, seconds: 7, resolution: "720p" });
+  if (i === 0) await veo(`${LOOK} ${line}`, take[0], { image: ref, audio: true, resolution: "720p", negative: NEG });
+  else await veo(`${LOOK} Her clothes and the car stay exactly as they are, nothing is added across her chest, her hoodie stays completely uncovered. She carries on without a pause in the same voice. ${line}`, take[i], { video: take[i - 1], audio: true, seconds: 7, resolution: "720p", negative: NEG });
 }
 const full = take.at(-1);
 
@@ -40,11 +43,11 @@ const full = take.at(-1);
 const wav = path.join(OUT, "voice.wav"), words = S.lines.flatMap((l) => l.say.trim().split(/\s+/)), al = path.join(OUT, "al.json");
 if (!fs.existsSync(al)) {
   ff(["-i", full, "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", wav]);
-  fs.writeFileSync(path.join(OUT, "jobs.json"), JSON.stringify([{ wav, words, out: al }]));
+  fs.writeFileSync(path.join(OUT, "jobs.json"), JSON.stringify([{ wav, words, out: al, lang }]));
   execFileSync(PY, [path.join(HERE, "../studio/align.py"), path.join(OUT, "jobs.json"), ...(process.env.WHISPER_DIR ? [process.env.WHISPER_DIR] : [])], { stdio: "inherit" });
 }
 const { times, total } = JSON.parse(fs.readFileSync(al, "utf8"));
-const norm = (s) => s.toLowerCase().replace(/[^\p{L}]/gu, ""), key = norm(CARD_NAMES[card].split(" ").at(-1)), at = words.findIndex((w) => norm(w) === key);
+const norm = (s) => s.toLowerCase().replace(/[^\p{L}]/gu, ""), key = norm(S.cardWord || CARD_NAMES[card].split(" ").at(-1)), at = words.findIndex((w) => norm(w) === key);
 const cardAt = at >= 0 ? times[at][0] : 3, voiceEnd = Math.min(total, times.at(-1)[1] + 0.35);
 
 // overlays rendered as PNG: the real card with the sign, and the end card with the app's own screen
@@ -54,13 +57,13 @@ const CSS = `@font-face { font-family: TT; src: url(${url(path.join(HERE, "fonts
 const cardImg = path.join(OUT, "ov_card.png"), endImg = path.join(OUT, "ov_end.png"), cardFile = path.join(HERE, "../studio/assets/cards", String(card).padStart(2, "0") + ".jpg");
 const render = async (html, file, transparent) => { const f = file + ".html"; fs.writeFileSync(f, `<!doctype html><meta charset="utf-8"><style>${CSS}</style>${html}`); await tab.goto(url(f)); await tab.waitForTimeout(300); await tab.screenshot({ path: file, omitBackground: transparent }); fs.rmSync(f); };
 await render(`<div style="position:absolute;right:36px;top:170px;width:330px;text-align:center"><img src="${url(cardFile)}" style="width:100%;border-radius:18px;box-shadow:0 14px 40px rgba(0,0,0,.6);transform:rotate(${reversed ? 178 : 3}deg)">
-  <div style="margin-top:16px;display:inline-block;background:#fff;color:#111;font-weight:700;font-size:32px;padding:8px 16px;border-radius:12px">sussa · ${signName.toLowerCase()} today</div></div>`, cardImg, true);
+  <div style="margin-top:16px;display:inline-block;background:#fff;color:#111;font-weight:700;font-size:32px;padding:8px 16px;border-radius:12px">sussa · ${signName.toLocaleLowerCase(lang)} ${TXT[0]}</div></div>`, cardImg, true);
 const shot = path.join(HERE, "../studio/assets/shots", `${lang}_1.jpg`);
 await render(`<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,#3a1f6e,#120826);color:#fff;text-align:center">
   <img src="${url(path.join(HERE, "../studio/assets/icon.png"))}" style="width:170px;border-radius:38px;margin-top:150px">
-  <div style="font-weight:800;font-size:92px;margin-top:20px">Sussa</div><div style="font-weight:500;font-size:44px;margin-top:6px;color:#F6C766">your sign's card, every morning</div>
+  <div style="font-weight:800;font-size:92px;margin-top:20px">Sussa</div><div style="font-weight:500;font-size:44px;margin-top:6px;color:#F6C766">${TXT[1]}</div>
   <img src="${url(shot)}" style="width:560px;height:930px;object-fit:cover;object-position:top;border-radius:40px;margin-top:44px;box-shadow:0 20px 60px rgba(0,0,0,.6)">
-  <div style="font-weight:700;font-size:48px;margin-top:40px">free on Google Play</div></div>`, endImg, false);
+  <div style="font-weight:700;font-size:48px;margin-top:40px">${TXT[2]}</div></div>`, endImg, false);
 await br.close();
 
 // captions: 3-4 words at a time on the real word timings

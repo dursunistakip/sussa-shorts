@@ -40,13 +40,13 @@ export async function image(prompt, file, { model = "gemini-2.5-flash-image", as
 }
 // one Veo clip (9:16) from a prompt, optionally a first-frame image, or a previous Veo clip to continue as one take
 // (the result of a continuation holds the whole take; it needs 720p and personGeneration allow_all when a person is on screen)
-export async function veo(prompt, file, { model = "veo-3.1-fast-generate-001", image: img, video, audio = false, seconds = 8, resolution = "1080p" } = {}) {
+export async function veo(prompt, file, { model = "veo-3.1-fast-generate-001", image: img, video, audio = false, seconds = 8, resolution = "1080p", negative } = {}) {
   const base = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/us-central1/publishers/google/models/${model}`;
   const call = async (u, body) => { const r = await fetch(u, { method: "POST", headers: { Authorization: `Bearer ${await token()}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(`veo ${r.status}: ${(await r.text()).slice(0, 300)}`); return r.json(); };
   const inst = { prompt, ...(img ? { image: { bytesBase64Encoded: fs.readFileSync(img).toString("base64"), mimeType: "image/jpeg" } } : {}),
     ...(video ? { video: { bytesBase64Encoded: fs.readFileSync(video).toString("base64"), mimeType: "video/mp4" } } : {}) };
-  const op = await call(`${base}:predictLongRunning`, { instances: [inst], parameters: { aspectRatio: "9:16", sampleCount: 1, durationSeconds: seconds, generateAudio: audio, resolution, personGeneration: video ? "allow_all" : "allow_adult" } });
+  const op = await call(`${base}:predictLongRunning`, { instances: [inst], parameters: { aspectRatio: "9:16", sampleCount: 1, durationSeconds: seconds, generateAudio: audio, resolution, ...(negative ? { negativePrompt: negative } : {}), personGeneration: video ? "allow_all" : "allow_adult" } });
   for (;;) {
     await new Promise((s) => setTimeout(s, 10000));
     const r = await call(`${base}:fetchPredictOperation`, { operationName: op.name });
