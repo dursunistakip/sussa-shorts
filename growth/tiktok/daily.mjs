@@ -40,7 +40,7 @@ for (const lang of langs) {
       const dir = path.join(out, `${lang}_slides_${fmt}`); await sendSlides(dir, JSON.parse(fs.readFileSync(path.join(dir, "meta.json"), "utf8")));
     } catch (e) { console.error(`slides ${lang} ${fmt} failed: ${e.message}`); }
   }
-  if (day % 2 === 0) {
+  if (process.env.TIKTOK_UGC === "on" && day % 2 === 0) {   // paused 2026-11-05 until the first results are in
     try {
       run([path.join(HERE, "ugc.mjs"), lang, iso, out]);
       const dir = path.join(out, `${lang}_ugc`); await sendVideo(dir, JSON.parse(fs.readFileSync(path.join(dir, "meta.json"), "utf8")));
