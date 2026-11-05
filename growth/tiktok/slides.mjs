@@ -12,29 +12,34 @@ let seed = [...`${iso}|${lang}|${fmt}`].reduce((h, c) => (Math.imul(h ^ c.charCo
 const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const pickOf = (a) => a[Math.floor(rnd() * a.length)];
 
-const RULES = `You write TikTok photo slideshows for women 18-34 who love tarot and astrology. Language: ${LANG}.
-It must read like a real person's post, not a brand. Rules:
-- Slide 1 is one concrete, oddly specific situation or claim that makes her stop (a person, a text, a place, a time). Never a generic "your energy is shifting".
-- One idea per slide, max 16 words, simple words. Each slide must make her want the next one. Mostly lowercase, no hashtags, max one emoji in the whole post.
-- Be specific and a little funny or a little brutal. Banned: universe, energy, manifest, journey, divine, healing, "trust the process", "you deserve", "this is your sign".
-- Gentle truth only: no promises about health, money or a specific person's actions.
-- Never write as someone who used an app, and never praise or review a product.`;
-const SHAPE = (n) => `Return JSON: {"slides":[{"text":"...","scene":"one short English description of an ordinary photo that fits"}] (exactly ${n}), "caption":"short natural caption + 3-4 hashtags"}.
+const RULES = `You write viral TikTok photo slideshows about tarot and zodiac signs for women 18-34. Language: ${LANG}. It must read like a real person's post, not a brand.
+The goal is sends and saves: the reader thinks "this is literally me" or "I have to send this to her".
+- Build on a feeling millions share: being the strong friend, overthinking a text at 2am, the oldest daughter, saying "I'm fine", still checking an ex's profile, being tired of being nice, people-pleasing, starting over. Broad enough that almost anyone sees herself, worded as if it were written about her alone.
+- Slide 1 is max 10 words and is a claim or a callout that makes her need slide 2. Strong shapes: "the real reason you...", "nobody tells you this about...", "you're not X, you're Y", "if you always..., read this", "send this to the friend who...".
+- First write 8 different hooks in "hooks", then use the one most people would stop for and send to a friend.
+- One idea per slide, max 15 words, simple spoken words. Each slide makes her want the next one, but never write the words "swipe", "next" or "keep going". Mostly lowercase, no hashtags, max one emoji in the whole post.
+- Warm and a little brutal, never preachy. Banned: universe, energy, manifest, journey, divine, healing, "trust the process", "you deserve", "this is your sign".
+- No promises about health, money or a specific person's actions, no diagnosing, never praise or review a product.`;
+const SHAPE = (n) => `Return JSON: {"hooks":["...8 hooks"],"slides":[{"text":"...","scene":"one short English description of an ordinary photo that fits"}] (exactly ${n}), "caption":"short natural caption + 3-4 hashtags"}.
 "scene" is an unglamorous everyday setting (unmade bed, car at night, kitchen table, bathroom mirror with no face, coffee on a windowsill). No faces, no text in the scene.`;
 
 let brief, cards = [];
 if (fmt === "pick") {
   while (cards.length < 3) { const c = Math.floor(rnd() * 78); if (!cards.includes(c)) cards.push(c); }
-  brief = `Format: swipe-to-pick. Slide 1 tells her to choose 1, 2 or 3 silently before swiping, about one specific situation (invent it). Slides 2-4 reveal card 1 = ${CARD_NAMES[cards[0]]}, card 2 = ${CARD_NAMES[cards[1]]}, card 3 = ${CARD_NAMES[cards[2]]}: each "text" is the number and card name, a newline, then what it says about that situation, true to the card's meaning. Slide 5 asks which one she picked and why it hit.\n${SHAPE(5)}`;
+  brief = `Format: swipe-to-pick. Slide 1 tells her to choose 1, 2 or 3 silently before swiping, about something everyone wonders (what they really think of you, why it ended, what is coming next for you). Slides 2-4 reveal card 1 = ${CARD_NAMES[cards[0]]}, card 2 = ${CARD_NAMES[cards[1]]}, card 3 = ${CARD_NAMES[cards[2]]}: each "text" is the number and card name, a newline, then an uncomfortably accurate line that would fit almost anyone, true to the card's meaning. Slide 5 asks which one she picked and tells her to send it to the person it is about.
+${SHAPE(5)}`;
 } else if (fmt === "rank") {
   const topic = pickOf(BANK.rank);
-  brief = `Format: zodiac ranking, topic "${topic}". Slide 1 is the hook. Slides 2-6 count down from 5 to 1, each naming a zodiac sign with one painfully specific, funny line. Slide 7: ask them to comment who you forgot.\n${SHAPE(7)}`;
+  brief = `Format: zodiac ranking, topic "${topic}", or a sharper angle on it. Slide 1 is the hook and must make every sign curious where she lands. Slides 2-6 count down from 5 to 1, each naming a zodiac sign with one line so accurate it stings. Slide 7 asks people to tag the sign they know.
+${SHAPE(7)}`;
 } else {
-  brief = `Format: "this found you". A short story in slides that speaks directly to a woman in one specific moment (invent one: waiting for a reply, about to text an ex, staying in a job she hates...). Slide 1 is the hook, slides 2-5 build, slide 6 lands one honest sentence she will want to send to a friend.\n${SHAPE(6)}`;
+  brief = `Format: "you are not X, you are Y". One widely shared feeling, seen from an angle she never considered, in six slides: slide 1 hook, slides 2-5 each name a small true detail of living like this, slide 6 is one sentence she will screenshot and send to a friend, with a tarot or zodiac angle somewhere in the post.
+${SHAPE(6)}`;
 }
 const scriptFile = path.join(OUT, "script.json");
 const S = fs.existsSync(scriptFile) ? JSON.parse(fs.readFileSync(scriptFile, "utf8")) : await gemini(`${RULES}\n\n${brief}`);
 fs.writeFileSync(scriptFile, JSON.stringify(S, null, 1));
+if (process.env.SCRIPT_ONLY) process.exit(0);
 
 // backgrounds: flat, slightly imperfect phone photos, the opposite of the glossy studio look
 const PHOTO = "Candid amateur iPhone photo, slightly grainy, uneven indoor light, ordinary real home, not staged, not cinematic, no people visible, no text, no letters, no logos. Scene: ";
@@ -52,9 +57,10 @@ const page = (s, i) => {
 .card { position: absolute; left: 50%; top: 210px; transform: translateX(-50%) rotate(-2deg); width: 560px; border-radius: 22px; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
 .txt { position: absolute; left: 70px; right: 70px; top: ${card ? 1230 : 620}px; text-align: center; }
 .l { display: inline; font-weight: 700; font-size: ${i === 0 ? 74 : 62}px; line-height: 1.5; color: #111; background: #fff; padding: 8px 18px; border-radius: 14px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.tag { position: absolute; left: 0; right: 0; bottom: 330px; text-align: center; font-weight: 600; font-size: 38px; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.9); }
 .n { display: block; font-weight: 800; font-size: 54px; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.8); margin-bottom: 18px; }
 </style><div class="bg"></div>${card ? `<img class="card" src="${url(card)}">` : ""}
-<div class="txt">${lines.length > 1 ? `<span class="n">${esc(lines[0])}</span><span class="l">${esc(lines[1])}</span>` : `<span class="l">${esc(lines[0]).replace(/\n/g, "<br>")}</span>`}</div>`;
+${i === S.slides.length - 1 ? `<div class="tag">sussa · free tarot on google play</div>` : ""}<div class="txt">${lines.length > 1 ? `<span class="n">${esc(lines[0])}</span><span class="l">${esc(lines[1])}</span>` : `<span class="l">${esc(lines[0]).replace(/\n/g, "<br>")}</span>`}</div>`;
 };
 const req = createRequire(process.env.PW_REQUIRE || path.join(HERE, "../../package.json")), { chromium } = req("playwright-core");
 const br = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {}), tab = await br.newPage({ viewport: { width: 1080, height: 1920 } });
