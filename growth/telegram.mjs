@@ -10,7 +10,9 @@ if (!TOKEN || !CHAT) { console.log("telegram: no bot configured, skipped"); proc
 // TikTok captions: short hook + 3-5 hashtags; no links (not clickable there), the profile link carries the app
 const TAGS = { en: "#tarot #astrology #zodiac #horoscope #fyp", tr: "#tarot #burçlar #astroloji #keşfet", pt: "#tarot #signos #astrologia #fyp", es: "#tarot #signos #astrologia #parati",
   id: "#tarot #zodiak #ramalan #fyp", vi: "#tarot #cunghoangdao #tuvi #xuhuong" };
-const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".mp4") && !f.endsWith(".tiktok.mp4") && LANGS.includes(f.split("_")[0])).sort() : [];
+// TIKTOK_MAX: how many regular videos a day go to TikTok, best YouTube formats first
+const RANK = ["srank", "sfound", "sweekly", "syesno"], score = (f) => { const i = RANK.indexOf(f.replace(/\.mp4$/, "").split("_")[1]); return i < 0 ? 9 : i; };
+const files = (fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".mp4") && !f.endsWith(".tiktok.mp4") && LANGS.includes(f.split("_")[0])).sort((a, b) => score(a) - score(b)) : []).slice(0, +process.env.TIKTOK_MAX || 99);
 let sent = 0;
 for (const f of files) {
   const meta = JSON.parse(fs.readFileSync(path.join(dir, f.replace(/\.mp4$/, ".json")), "utf8"));

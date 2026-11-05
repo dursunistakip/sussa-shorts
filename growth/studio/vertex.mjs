@@ -31,6 +31,28 @@ export async function gemini(prompt, { model = "gemini-3.1-pro-preview", tempera
   const text = d.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
   return JSON.parse(text.replace(/^```json\s*|```\s*$/g, ""));
 }
+// one image from Gemini (9:16 by default)
+export async function image(prompt, file, { model = "gemini-2.5-flash-image", aspect = "9:16" } = {}) {
+  const d = await generate(model, { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: aspect } } }, 7);
+  const part = d.candidates?.[0]?.content?.parts?.find((x) => x.inlineData);
+  if (!part) throw new Error("no image returned");
+  fs.writeFileSync(file, Buffer.from(part.inlineData.data, "base64")); return file;
+}
+// one Veo clip (9:16) from a prompt and optionally a first-frame image, with Veo's own audio when audio = true
+export async function veo(prompt, file, { model = "veo-3.1-fast-generate-001", image: img, audio = false, seconds = 8 } = {}) {
+  const base = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/us-central1/publishers/google/models/${model}`;
+  const call = async (u, body) => { const r = await fetch(u, { method: "POST", headers: { Authorization: `Bearer ${await token()}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(`veo ${r.status}: ${(await r.text()).slice(0, 300)}`); return r.json(); };
+  const inst = { prompt, ...(img ? { image: { bytesBase64Encoded: fs.readFileSync(img).toString("base64"), mimeType: "image/jpeg" } } : {}) };
+  const op = await call(`${base}:predictLongRunning`, { instances: [inst], parameters: { aspectRatio: "9:16", sampleCount: 1, durationSeconds: seconds, generateAudio: audio, resolution: "1080p", personGeneration: "allow_adult" } });
+  for (;;) {
+    await new Promise((s) => setTimeout(s, 10000));
+    const r = await call(`${base}:fetchPredictOperation`, { operationName: op.name });
+    if (!r.done) continue;
+    const v = r.response?.videos?.[0]; if (!v) throw new Error(`veo: no video ${JSON.stringify(r.error || r.response).slice(0, 300)}`);
+    fs.writeFileSync(file, Buffer.from(v.bytesBase64Encoded, "base64")); return file;
+  }
+}
 // 24 kHz mono 16-bit PCM wrapped as WAV
 export async function tts(text, file, { voice = "Aoede", style, lang, model = "gemini-2.5-pro-tts" } = {}) {
   // Pro voice first; if it keeps failing, the flash voice (same speaker) still beats the old renderer

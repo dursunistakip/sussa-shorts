@@ -53,13 +53,20 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TIKTOK_LANGS: ${{ vars.TIKTOK_LANGS || 'en' }}
+          TIKTOK_MAX: ${{ vars.TIKTOK_MAX }}
         run: for d in growth/out/*/; do node growth/telegram.mjs "$d"; done
+      - name: TikTok slideshows and talking-character video
+        if: always() && vars.TIKTOK_PLAN == 'on'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node growth/tiktok/daily.mjs
       - name: Stats snapshot
         if: always()
         run: |
           node growth/stats.mjs
           git config user.name "sussa-bot" && git config user.email "actions@users.noreply.github.com"
-          git add growth/stats growth/studio/*.json && git commit -q -m "stats + studio history $(date -u +%F)" && (git pull -q --rebase && git push -q) || echo "no stats change"
+          git add growth/stats growth/studio/*.json growth/tiktok/*.json && git commit -q -m "stats + studio history $(date -u +%F)" && (git pull -q --rebase && git push -q) || echo "no stats change"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
