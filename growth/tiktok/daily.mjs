@@ -1,4 +1,4 @@
-// Daily TikTok hand-off: two slideshows every day and a talking-character video every second day, sent to the owner's Telegram.
+// Daily TikTok hand-off: two slideshows and a countdown list video every day (character video paused), sent to the owner's Telegram.
 //   node growth/tiktok/daily.mjs [YYYY-MM-DD]     env TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TIKTOK_LANGS (default "en")
 import fs from "fs"; import path from "path"; import { execFileSync } from "child_process"; import { fileURLToPath } from "url";
 
@@ -22,11 +22,11 @@ async function sendSlides(dir, meta) {
   if (!r.ok) throw new Error(r.description);
   await note(meta.caption, r.result[0].message_id);
 }
-async function sendVideo(dir, meta) {
+async function sendVideo(dir, meta, label = `karakter videosu · TikTok'ta "AI-generated" etiketini aç`) {
   const form = new FormData();
-  form.append("chat_id", CHAT); form.append("caption", `${meta.lang.toUpperCase()} · karakter videosu · TikTok'ta "AI-generated" etiketini aç`); form.append("supports_streaming", "true");
+  form.append("chat_id", CHAT); form.append("caption", `${meta.lang.toUpperCase()} · ${label}`); form.append("supports_streaming", "true");
   form.append("width", "1080"); form.append("height", "1920");
-  form.append("video", new Blob([fs.readFileSync(path.join(dir, "video.mp4"))], { type: "video/mp4" }), "sussa_ugc.mp4");
+  form.append("video", new Blob([fs.readFileSync(path.join(dir, "video.mp4"))], { type: "video/mp4" }), `sussa_${meta.kind || "video"}.mp4`);
   const r = await (await fetch(api("sendVideo"), { method: "POST", body: form })).json();
   if (!r.ok) throw new Error(r.description);
   await note(meta.caption, r.result.message_id);
@@ -39,6 +39,13 @@ for (const lang of langs) {
       run([path.join(HERE, "slides.mjs"), lang, fmt, iso, out]);
       const dir = path.join(out, `${lang}_slides_${fmt}`); await sendSlides(dir, JSON.parse(fs.readFileSync(path.join(dir, "meta.json"), "utf8")));
     } catch (e) { console.error(`slides ${lang} ${fmt} failed: ${e.message}`); }
+  }
+  // countdown list video (top 5 signs, #1 lands last), daily test from 2026-11-09; TIKTOK_LIST=off stops it
+  if (process.env.TIKTOK_LIST !== "off") {
+    try {
+      run([path.join(HERE, "listvideo.mjs"), lang, iso, out]);
+      const dir = path.join(out, `${lang}_list`); await sendVideo(dir, JSON.parse(fs.readFileSync(path.join(dir, "meta.json"), "utf8")), "liste videosu · trend bir sesi telefondan ekle");
+    } catch (e) { console.error(`list ${lang} failed: ${e.message}`); }
   }
   if (process.env.TIKTOK_UGC === "on" && day % 2 === 0) {   // paused 2026-11-05 until the first results are in
     try {
