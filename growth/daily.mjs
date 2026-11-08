@@ -1,11 +1,14 @@
-// Daily run: two studio videos per channel language (growth/studio, formats by weekday, sky-news on big sky days), uploaded when
+// Daily run: one studio video per channel language (growth/studio, format by weekday from the winners list below), uploaded when
 // that channel is connected. LANGS env picks the channels (default "en,tr"). A language whose evening has started gets tomorrow's
 // videos, so a video is always about the day its viewers are waking up to. If a studio video fails, the old concept renderer fills in.
 import { execFileSync } from "child_process"; import fs from "fs"; import path from "path"; import { fileURLToPath } from "url";
-import { loadSky } from "./sky-loader.mjs"; import { WEEK } from "./studio/formats.mjs"; import { skyFacts } from "./studio/facts.mjs";
+import { loadSky } from "./sky-loader.mjs";
 const G = path.dirname(fileURLToPath(import.meta.url));
 const sky = await loadSky();
 const PLAN = JSON.parse(fs.readFileSync(path.join(G, "plan.json"), "utf8"));   // old concepts, used as the fallback
+// one video a day per channel (owner, 2026-11-07, to spend credit where it works). Formats picked from 79 videos past 48 h:
+// weekly median 169, yes/no 61 with spikes to 661, found and rank hit-or-miss (means 209 and 222); pick, myth, compat, signsas, pov dropped.
+const DAILY = ["weekly", "yesno", "found", "rank", "yesno", "found", "rank"];   // Sunday first
 const langs = (process.env.LANGS || "en,tr").split(",").map((s) => s.trim()).filter(Boolean);
 const connected = (l) => !!process.env[`YT_REFRESH_${l.toUpperCase()}`] || fs.existsSync(path.join(process.env.YT_SECRETS_DIR || "D:/SussaApp/Signing", `youtube_${l}.json`));
 // extra daily video for strong channels (SHORTS_EXTRA, e.g. "es"): the other of the two best formats, yes/no and rank
@@ -26,8 +29,7 @@ for (const lang of langs) {
   const hour = +new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hourCycle: "h23" }).format(new Date());
   const d = hour >= 18 ? sky.addDays(sky.ymdIn(tz), 1) : sky.ymdIn(tz);
   const iso = `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
-  const formats = [...WEEK[new Date(Date.UTC(d.y, d.m - 1, d.d)).getUTCDay()]];
-  if (skyFacts(sky, d).bigDay && !formats.includes("sky")) formats[1] = "sky";
+  const formats = [DAILY[new Date(Date.UTC(d.y, d.m - 1, d.d)).getUTCDay()]];
   if (extra.includes(lang)) formats.push(!formats.includes("yesno") ? "yesno" : !formats.includes("rank") ? "rank" : "pick");
   const out = path.join(G, "out", iso);
   formats.forEach((fmt, slot) => {
