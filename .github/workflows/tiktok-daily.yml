@@ -1,0 +1,38 @@
+# One TikTok slideshow a day, sent to the owner's Telegram (posted by hand). No YouTube, no video rendering.
+# The YouTube channels were terminated on 2026-11-12, so daily-shorts.yml stays disabled.
+name: tiktok-daily
+on:
+  schedule:
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+concurrency: { group: tiktok-daily, cancel-in-progress: false }
+permissions: { contents: write }   # done.json is committed back
+jobs:
+  slides:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PW_REQUIRE: /tmp/pw/package.json
+      VERTEX_SA_JSON: ${{ secrets.VERTEX_SA_JSON }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TIKTOK_LANGS: ${{ vars.TIKTOK_LANGS || 'en' }}
+      TIKTOK_SLIDES: "1"
+      TIKTOK_LIST: "off"
+      TIKTOK_UGC: "off"
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: "24" }
+      - name: Browser
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-color-emoji fonts-dejavu-core > /dev/null
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y > /dev/null && npm i -s playwright-core@1.49.1 playwright@1.49.1 && npx playwright install --with-deps chromium
+      - name: Slideshow to Telegram
+        run: node growth/tiktok/daily.mjs
+      - name: Remember what was sent
+        if: always()
+        run: |
+          git config user.name "sussa-bot" && git config user.email "actions@users.noreply.github.com"
+          git add growth/tiktok/*.json && git commit -q -m "tiktok sent $(date -u +%F)" && (git pull -q --rebase && git push -q) || echo "nothing to commit"

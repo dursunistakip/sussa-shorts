@@ -1,4 +1,4 @@
-// Daily TikTok hand-off: two slideshows and a countdown list video every day (character video paused), sent to the owner's Telegram.
+// Daily TikTok hand-off sent to the owner's Telegram: slideshows (TIKTOK_SLIDES per day), optional countdown list video (TIKTOK_LIST) and character video (TIKTOK_UGC).
 //   node growth/tiktok/daily.mjs [YYYY-MM-DD]     env TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TIKTOK_LANGS (default "en")
 import fs from "fs"; import path from "path"; import { execFileSync } from "child_process"; import { fileURLToPath } from "url";
 
@@ -34,7 +34,10 @@ async function sendVideo(dir, meta, label = `karakter videosu · TikTok'ta "AI-g
 
 for (const lang of langs) {
   const key = `${iso}/${lang}`; if (done.includes(key)) { console.log("already sent", key); continue; }
-  for (const fmt of PAIRS[day % PAIRS.length]) {
+  // TIKTOK_SLIDES limits the slideshows per day (2026-11-12: one a day, formats rotate)
+  const nSlides = Math.max(1, Math.min(2, +(process.env.TIKTOK_SLIDES || 2)));
+  const fmts = nSlides === 1 ? [["pick", "rank", "found"][day % 3]] : PAIRS[day % PAIRS.length];
+  for (const fmt of fmts) {
     try {
       run([path.join(HERE, "slides.mjs"), lang, fmt, iso, out]);
       const dir = path.join(out, `${lang}_slides_${fmt}`); await sendSlides(dir, JSON.parse(fs.readFileSync(path.join(dir, "meta.json"), "utf8")));
