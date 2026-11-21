@@ -2,3 +2,6 @@ growth/out/
 growth/.cache/
 growth/studio/lib/
 node_modules/
+
+# big real-image sources for TikTok v3 (CC0 textures, PD scans/photos); posts are rendered locally
+growth/tiktok/assets/real/

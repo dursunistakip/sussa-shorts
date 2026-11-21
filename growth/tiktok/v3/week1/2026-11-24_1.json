@@ -1,0 +1,42 @@
+{
+ "format": "pick",
+ "tex": "cherry",
+ "seed": 41,
+ "light": [
+  880,
+  240
+ ],
+ "hook": "full moon tonight.<br>pick a pile: what you're finally ready to let go of",
+ "piles": [
+  {
+   "title": "someone you keep checking on",
+   "cards": [
+    43,
+    59,
+    17
+   ],
+   "text": "you already know how this ends. stop refreshing their page. the peace you want starts the day you stop looking."
+  },
+  {
+   "title": "the version of you that had to be tough",
+   "cards": [
+    30,
+    8,
+    41
+   ],
+   "text": "you got through it. you don't have to keep your guard up in every room now. soft isn't weak."
+  },
+  {
+   "title": "a worry that isn't yours to carry",
+   "cards": [
+    68,
+    69,
+    21
+   ],
+   "text": "you've been carrying someone else's problem like it's your job. hand it back. something finishes for you this week."
+  }
+ ],
+ "outro": "which pile<br>was yours?",
+ "cta": "comment 1, 2 or 3<br>and what you're letting go 🌕",
+ "caption": "full moon tonight 🌕 pick a pile: what you're ready to let go of #fullmoon #pickapile #tarot #tarotreading #fullmoonritual"
+}

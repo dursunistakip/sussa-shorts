@@ -1,0 +1,15 @@
+{
+ "format": "pick", "photo": "night", "accent": "#E9C98B",
+ "hook": "pick a pile.<br>this is what they're <em>not saying</em> out loud",
+ "piles": [
+  {"title": "they're scared of ruining it", "cards": [37, 47, 17],
+   "text": "they think about you more than they let on. the slow replies aren't distance, they're nerves. a soft message is closer than you think."},
+  {"title": "pride is doing the talking", "cards": [54, 57, 62],
+   "text": "they replay the last argument and still think they were right. they miss you anyway. you don't owe them the first text."},
+  {"title": "they're already making plans", "cards": [64, 25, 19],
+   "text": "they see a future with you and it scares them a little. they're quietly getting their life together first. watch what they do, not what they post."}
+ ],
+ "outro": "which pile<br>was yours?",
+ "cta": "comment <em>1, 2 or 3</em><br>and tell me if it hit",
+ "caption": "pick a pile: what they're not saying out loud 🃏 which one was yours? #tarot #pickapile #tarotreading #lovereading #tarottok"
+}

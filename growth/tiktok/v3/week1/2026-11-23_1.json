@@ -1,0 +1,16 @@
+{
+ "format": "pick", "photo": "evening", "accent": "#F2B8A0", "single": true, "blur": 4,
+ "hook": "pick a card.<br>this is what <em>december</em> is bringing you",
+ "sub": "trust the first one your eyes went to",
+ "piles": [
+  {"title": "something stuck finally moves", "cards": [7],
+   "text": "the thing that's been frozen since summer starts moving. you'll have to pick a direction. stop waiting for a sign: this is it."},
+  {"title": "your people come back", "cards": [38],
+   "text": "december gets social. a reunion, a dead group chat comes back to life, someone you haven't seen in years. go."},
+  {"title": "a lucky turn you didn't plan", "cards": [10],
+   "text": "a random invite, a last-minute change, a door you didn't knock on. say yes before you overthink it."}
+ ],
+ "outro": "which card<br>did you pick?",
+ "cta": "comment <em>1, 2 or 3</em><br>and come back in january to tell me",
+ "caption": "pick a card: what december is bringing you ✨ trust your first pick #tarot #pickacard #tarotreading #december #tarottok"
+}

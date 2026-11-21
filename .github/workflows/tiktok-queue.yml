@@ -1,0 +1,31 @@
+# Two TikTok posts a day from the pre-rendered queue (growth/tiktok/queue), sent to the owner's Telegram (posted by hand).
+# Replaces tiktok-daily.yml (2026-11-21): no Gemini/Vertex calls, nothing generated here, so it costs nothing.
+name: tiktok-queue
+on:
+  schedule:
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+    inputs:
+      date: { description: "YYYY-MM-DD to send (default: today UTC)", required: false }
+concurrency: { group: tiktok-queue, cancel-in-progress: false }
+permissions: { contents: write }   # queue/sent.json is committed back
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      QUEUE_DATE: ${{ inputs.date }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: "24" }
+      - name: Today's posts to Telegram
+        run: node growth/tiktok/queue.mjs
+      - name: Remember what was sent
+        if: always()
+        run: |
+          git config user.name "sussa-bot" && git config user.email "actions@users.noreply.github.com"
+          git add growth/tiktok/queue/sent.json && git commit -q -m "tiktok queue sent $(date -u +%F)" && (git pull -q --rebase && git push -q) || echo "nothing to commit"

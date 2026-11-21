@@ -1,0 +1,38 @@
+{
+ "format": "pick",
+ "single": true,
+ "tex": "fleece",
+ "seed": 91,
+ "light": [
+  880,
+  260
+ ],
+ "hook": "pick a card.<br>your message for this weekend",
+ "sub": "trust the first one your eyes went to",
+ "piles": [
+  {
+   "title": "slow down, you're allowed",
+   "cards": [
+    14
+   ],
+   "text": "temperance says the week was a lot. don't fill every hour. a slow saturday puts you back together."
+  },
+  {
+   "title": "say yes to the plans",
+   "cards": [
+    25
+   ],
+   "text": "four of wands: celebration. the invite you almost turned down is the one. go, even for an hour."
+  },
+  {
+   "title": "quiet time fixes more than you think",
+   "cards": [
+    9
+   ],
+   "text": "the hermit wants you offline for a bit. a walk, a book, no phone. the answer you're chasing shows up in the quiet."
+  }
+ ],
+ "outro": "which card<br>did you pick?",
+ "cta": "comment 1, 2 or 3<br>and how your weekend went",
+ "caption": "pick a card: your message for this weekend ✨ #tarot #pickacard #tarotreading #weekendvibes #tarottok"
+}

@@ -1,0 +1,38 @@
+{
+ "format": "pick",
+ "single": true,
+ "tex": "floor",
+ "seed": 61,
+ "light": [
+  200,
+  300
+ ],
+ "hook": "think of a yes or no question.<br>now pick a card",
+ "sub": "first instinct only",
+ "piles": [
+  {
+   "title": "yes, a clear one",
+   "cards": [
+    19
+   ],
+   "text": "the sun is as close to a yes as tarot gets. go ahead, and stop asking everyone else for permission."
+  },
+  {
+   "title": "not yet",
+   "cards": [
+    12
+   ],
+   "text": "the hanged man says wait. the answer isn't no, the timing just isn't here. look at it from another angle first."
+  },
+  {
+   "title": "no, and it's protecting you",
+   "cards": [
+    16
+   ],
+   "text": "the tower says this one would fall apart. it stings now, but it clears space for something that actually holds."
+  }
+ ],
+ "outro": "which card<br>did you get?",
+ "cta": "comment 1, 2 or 3<br>and your question if you're brave",
+ "caption": "yes or no tarot: think of a question and pick a card 🃏 #tarot #yesornotarot #pickacard #tarotreading #tarottok"
+}

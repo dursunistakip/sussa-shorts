@@ -1,0 +1,42 @@
+{
+ "format": "pick",
+ "tex": "quatrefoil",
+ "seed": 71,
+ "light": [
+  180,
+  260
+ ],
+ "hook": "pick a pile.<br>what's coming in your love life before the year ends",
+ "piles": [
+  {
+   "title": "someone from the past checks in",
+   "cards": [
+    41,
+    10,
+    46
+   ],
+   "text": "an old name shows up: a message, a like, a 'saw this and thought of you'. you get to decide if it's a reunion or just closure."
+  },
+  {
+   "title": "a slow burn finally becomes obvious",
+   "cards": [
+    6,
+    24,
+    72
+   ],
+   "text": "the person you've been reading signals from stops being subtle. expect a clear move before new year."
+  },
+  {
+   "title": "you choose yourself, and it attracts the right one",
+   "cards": [
+    3,
+    44,
+    77
+   ],
+   "text": "you stop shrinking to fit. that confidence is exactly what draws in someone steady. no chasing this time."
+  }
+ ],
+ "outro": "which pile<br>was yours?",
+ "cta": "comment 1, 2 or 3<br>and come back in january to tell me",
+ "caption": "pick a pile: what's coming in your love life before the year ends 💌 #tarot #pickapile #lovereading #tarotreading #tarottok"
+}

@@ -1,0 +1,24 @@
+{
+ "format": "sky",
+ "kicker": "tuesday · nov 24 · 14:54 utc",
+ "hook": "the <em>full moon in gemini</em> is coming. here's where it lands for your sign",
+ "sunLon": 242.34, "moonLon": 62.34, "sunSign": 8, "moonSign": 2, "sunDeg": "2° ♐︎", "moonDeg": "2° ♊︎",
+ "wheelNote": "real positions at the exact moment: moon at 2°20′ gemini, sun opposite at 2°20′ sagittarius",
+ "signs": [
+  {"sign": 0, "house": "your 3rd house · words & messages", "text": "a conversation you've been avoiding finally happens. the text gets sent, or answered."},
+  {"sign": 1, "house": "your 2nd house · money & worth", "text": "a money moment: a bill, a raise, a 'what am i worth' talk. don't undersell yourself."},
+  {"sign": 2, "house": "your 1st house · you", "text": "it's your full moon. you see yourself clearly, maybe for the first time this year. say what you want."},
+  {"sign": 3, "house": "your 12th house · rest & the unseen", "text": "quiet and emotional for you. dreams get loud. close a chapter in private, no announcement needed."},
+  {"sign": 4, "house": "your 11th house · friends & hopes", "text": "group plans peak and you'll see who really shows up for you. keep those ones close."},
+  {"sign": 5, "house": "your 10th house · career", "text": "work spotlight. effort from the last six months gets noticed. ask for what you earned."},
+  {"sign": 6, "house": "your 9th house · beliefs & travel", "text": "you're done with the routine. a trip, a course, a big new idea: say yes to one of them."},
+  {"sign": 7, "house": "your 8th house · depth & trust", "text": "deep stuff comes up: trust, intimacy, shared money. let go of what you've been gripping."},
+  {"sign": 8, "house": "your 7th house · partners", "text": "a partner, a deal, a 'where is this going'. the other person finally shows their cards."},
+  {"sign": 9, "house": "your 6th house · body & routine", "text": "your body wants a reset. sleep, food, one small habit: fix one thing and the week changes."},
+  {"sign": 10, "house": "your 5th house · romance & fun", "text": "a crush gets obvious. flirt, create, do something just because it's fun."},
+  {"sign": 11, "house": "your 4th house · home & family", "text": "home and family take center stage. old feelings resurface. rest more than you think you need."}
+ ],
+ "outro": "save this<br>for tuesday 🌕",
+ "cta": "this is for your <em>sun sign</em>. read your <em>rising</em> too: it often fits even better.<br><br>comment your sun + rising 👇",
+ "caption": "full moon in gemini on nov 24: what it means for your sign 🌕 save it for tuesday #fullmoon #gemini #astrology #horoscope #zodiacsigns"
+}
